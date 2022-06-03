@@ -3,6 +3,8 @@ const mysql = require ("mysql2");
 const consoleTable = require("console.table");
 
 const connection = require("./connection/connection");
+const { query, promise } = require("./connection/connection");
+
 // const queries = require ("./db/queries");
 
 
@@ -140,7 +142,7 @@ addRole = () => {
             return d
             
         })    
-        console.log(departmentArray)
+        // console.log(departmentArray)
         return inquirer.prompt ([
             {
                 type: "input",
@@ -183,50 +185,82 @@ addRole = () => {
     })
 }
 
+
+
 addEmployee = () => {
-    connection.execute("SELECT role.id AS id, title AS name FROM role", (err, results) => {
-        const roleArray = results.map(r => {
-            return r
-        })
-        console.log(roleArray)
+    inquirer.prompt([
+        {
+            type: "input",
+            name: "firstName",
+            message: "What is the first name of the employee?",
+        },
+        {
+            type: "input",
+            name: "lastName",
+            message: "What is the last name of the employee?",
+        }
+    ])
+    .then(answers => {
+        const employeeInfo = [answers.firstName, answers.lastName]
+        // console.log(employeeInfo)
+
+        const role = "SELECT role.id, role.title AS name FROM role";
+
         
-        return inquirer.prompt ([
-            {
-                type: "input",
-                name: "firstName",
-                message: "What is the first name of the employee?",
-            },
-            {
-                type: "input",
-                name: "lastName",
-                message: "What is the last name of the employee?",
-            },
-            {
-                type: "list", 
-                name: "employeeRole",
-                message: "What is the role for the employee?",
-                choices: roleArray,
-            }
-            // {
-            //     type: "list", 
-            //     name: "employeeManager",
-            //     message: "Who is the employees manager?",
-            //     choices: managerArray,
-            // },
-        ])
-        .then((answers) => {
-            const roleId = roleArray.filter(role => role.name === answers.employeeRole)[0].id;
-            console.log(roleId)
-            employeeTracker()
-            connection.query("INSERT INTO employee SET ?", {
-                first_name: answers.firstName,
-                last_name: answers.lastName,
-                role_id: roleId,
-                manager_id: null
-            })
+        connection.query(role, (err, results) => {
+            if(err) throw err;
+            const roleArray = results.map(({id, name}) => ({id: id, name: name}));
             
-        })
-    })
+            inquirer.prompt([
+                {
+                    type: "list", 
+                    name: "employeeRole",
+                    message: "What is the role for the employee?",
+                    choices: roleArray,
+                }
+
+            ])
+            .then(answer => {
+                const role = answer.employeeRole;
+                const departmentId = roleArray.filter(role => role.name === answer.employeeRole)[0].id;
+                // console.log(departmentId)
+                employeeInfo.push(departmentId);
+                // console.log(employeeInfo)
+
+                const managerRole = "SELECT * FROM employee"
+    
+                connection.query(managerRole, (err, results) => {
+                    const managerArray = results.map(({id, first_name, last_name }) => ({id:id, name: first_name + " " + last_name}))
+                    // console.log(managerArray)
+                    inquirer.prompt([
+                        {
+                            type: "list", 
+                            name: "employeeManager",
+                            message: "Who is the employees manager?",
+                            choices: managerArray,
+                        }
+                    ])
+                    .then(answer => {
+                        const employeeManager = answer.employeeManager;
+                        const managerId = managerArray.filter(employee => employee.name === answer.employeeManager)[0].id;
+                        // console.log(managerId)
+                        employeeInfo.push(managerId);
+                        console.log(employeeInfo)
+                        const rowEmployee = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES(?, ?, ?, ?)"
+                        
+                        connection.query (rowEmployee, employeeInfo, (err, result) => {
+                            if (err) throw err;
+                            console.log("Succsefully Added Employee")
+                            employeeTracker()
+                        })
+    
+                    });
+                });
+            })
+
+            
+        });
+    });
 };
 
 
