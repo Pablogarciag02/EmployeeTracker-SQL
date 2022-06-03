@@ -84,7 +84,7 @@ allDepartments = () => {
 
 allRoles = () => {
     connection.query(
-        'SELECT role.id, title, salary, name AS department FROM `role` INNER JOIN department ON role.department_id = department.id', 
+        'SELECT role.id, role.title, role.salary, department.name AS department FROM `role` INNER JOIN department ON role.department_id = department.id', 
         function(err, results, fields) {
             console.table(results)
             employeeTracker()
@@ -110,248 +110,125 @@ allEmployees = () => {
 }
 
 addDepartment = () => {
+    return inquirer.prompt ([
+        {
+            type: "input",
+            name:"department",
+            message: "Please enter the name for the new Department.",
+            validate: department => {
+                if(department) {
+                    return true;
+                } else {
+                    return false;
+                }
 
+            }
+        },
+    ])
+    .then((answers) => {
+        connection.query("INSERT INTO department SET ?", {
+            name:answers.department,                  
+        }) 
+        console.log("Succsesfully Added Department") 
+        employeeTracker()
+    })
 }
-// const employeeTracker = () => {
 
-//     connection.execute("SELECT name FROM department",  (err, results) => {
-//         const departmentArray = results.map(d => {
-//             return d.name
-//         })    
-//         console.log(departmentArray)
-
-        
-//         return inquirer.prompt([
-//         {
-//             type: "list",
-//             name: "roleDepartment",
-//             choices: departmentArray,
-//             message:"What department does the role belong to?",
-//             when: (input) => input.accion === "Add Role"
-//         },
-//     ])
-//     })
-        
-
-//     connection.execute("SELECT title FROM role", (err, results) => {
-//         const roleArray = results.map(r => {
-//             return r.title
-//         })
-//         console.log(roleArray)
-//     })
-
-//     connection.execute("SELECT first_name FROM employee", (err, results) => {
-//         const employeeArray = results.map(e => {
-//             return e.first_name
-//         })
-//         console.log(employeeArray)
-//     })
-
-    
-
-//     // connection.execute("SELECT title FROM role", (err, results) => {
-//     //     const roleArray = results.map(r => {
-//     //         return r.title
-//     //     })
-//     //     console.log(roleArray)
-//     // })
-    
-//     connection.query(
-//         'SELECT name FROM `department`' ,
-//         function(err, results, fields) {
-//             const departmentArray = results.map(d => {
-//                 return d.name
-//             })
+addRole = () => {
+    connection.execute("SELECT * FROM department",  (err, results) => {
+        const departmentArray = results.map(d => {
+            return d
             
-//             'SELECT title FROM `role`',
-//             function(err, results, fields) {
-//                 const roleArray = results.map(r => {
-//                     return r.title
-//                 })
-                
+        })    
+        console.log(departmentArray)
+        return inquirer.prompt ([
+            {
+                type: "input",
+                name: "roleName",
+                message: "What is the name of the role?",
+                validate: roleName => {
+                    if(roleName) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            },
+            {
+                type: "input",
+                name: "salary",
+                message: "What is the salary for this role?",
+            },
+            
+            
+            {
+                type: "list",
+                name: "roleDepartment",
+                choices: departmentArray,
+                message:"What department does the role belong to?",
+            },
+        ])
+        .then((answers) => {
+            const departmentId = departmentArray.filter(department => department.name === answers.roleDepartment)[0].id;
 
-//                 return inquirer.prompt ([
-//                     {
-//                         type: "list",
-//                         name: "accion",
-//                         message: "Please Select an Option",
-//                         choices:["All Departments", "All Roles", "All Employees", "Add Department", "Add Role", "Add Employee", "Update An Employee Role"]
-//                     },
-//                     //Add Department name (id should be automatic)
-//                     {
-//                         type: "input",
-//                         name:"department",
-//                         message: "Please enter the name for the new Department.",
-//                         when: (input) => input.accion === "Add Department",
-//                         validate: department => {
-//                             if(department) {
-//                                 return true;
-//                             } else {
-//                                 return false;
-//                             }
-
-//                         }
-//                     },
-//                     //Add role (should ask for name, Salary, which department does the role belong to)
-//                     {
-//                         type: "input",
-//                         name: "roleName",
-//                         message: "What is the name of the role?",
-//                         when: (input) => input.accion === "Add Role",
-//                         validate: roleName => {
-//                             if(roleName) {
-//                                 return true;
-//                             } else {
-//                                 return false;
-//                             }
-//                         }
-//                     },
-//                     {
-//                         type: "input",
-//                         name: "salary",
-//                         message: "What is the salary for this role?",
-//                         when: (input) => input.accion === "Add Role"
-//                     },
-
-                    
-//                     {
-//                         type: "list",
-//                         name: "roleDepartment",
-//                         choices: departmentArray,
-//                         message:"What department does the role belong to?",
-//                         when: (input) => input.accion === "Add Role"
-//                     },
-
-//                     //Add Employee (should ask for first name, last name, employee role, employee manager)
-//                     {
-//                         type: "input",
-//                         name: "firstName",
-//                         message: "What is the first name of the employee?",
-//                         when: (input) => input.accion === "Add Employee"
-
-//                     },
-//                     {
-//                         type: "input",
-//                         name: "lastName",
-//                         message: "What is the last name of the employee?",
-//                         when: (input) => input.accion === "Add Employee"
-                        
-//                     },
-//                     {
-//                         type: "list", 
-//                         name: "employeeRole",
-//                         message: "What is the role for the employee?",
-//                         choices: roleArray,
-//                         when: (input) => input.accion === "Add Employee"
-//                     },
-//                     {
-//                         type: "list", 
-//                         name: "employeeManager",
-//                         message: "Who is the employees manager?",
-//                         choices: managerArray,
-//                         when: (input) => input.accion === "Add Employee"
-//                     },
-//                     //Update an Employee role
-//                     {
-//                         type: "list",
-//                         name: "employeeUpdate",
-//                         message: "Which employee's role would you like to update?",
-//                         choices: employeeArray,
-//                         when: (input) => input.accion === "Update An Employee Role"
-//                     },
-//                     {
-//                         type: "choices", 
-//                         name: "newemployeeRole",
-//                         message: "Which role do you want to assign the selected employee?",
-//                         choices: roleArray,
-//                         when: (input) => input.accion === "Update An Employee Role"
-//                     },
-                    
-//                 ])
-
-
-//                 .then (answers => {
-//                     let {accion, department, roleName, salary, roleDepartment, firstName, lastName, employeeRole, employeeManager, employeeUpdate, newemployeeRole, restart} = answers;
-//                     let teamMember
-
-//                     //Show all the departments in the Terminal with console.table
-//                     if(accion === "All Departments") {
-//                         connection.query(
-//                             'SELECT id, name AS department FROM `department`', 
-//                             function(err, results, fields) {
-//                                 console.table(results)
-//                                 employeeTracker()
-//                             }
-//                         )
-//                     }
-
-//                     //Show all the ROLES in the Terminal with console.table
-//                     if(accion === "All Roles") {
-//                         connection.query(
-//                             'SELECT role.id, title, salary, name AS department FROM `role` INNER JOIN department ON role.department_id = department.id', 
-//                             function(err, results, fields) {
-//                                 console.table(results)
-//                                 employeeTracker()
-//                             }
-//                         )
-//                     }
-
-//                     //Show all the EMPLOYEES in the Terminal with console.table
-//                     if(accion === "All Employees") {
-//                         connection.query(
-//                             `SELECT e.id, e.first_name, e.last_name, title, name AS department, salary, CONCAT(m.first_name, ' ', m.last_name) AS manager
-//                             FROM employee e
-//                             INNER JOIN role
-//                             ON e.role_id = role.id
-//                             INNER JOIN department
-//                             ON role.department_id = department.id
-//                             LEFT JOIN employee m
-//                             ON e.manager_id = m.id;`,
-//                             function(err, results, fields) {
-//                                 console.table(results)
-//                                 employeeTracker()
-//                             }
-//                         )
-//                     }
-
-//                     //Adds the name provided into the department table with a default id
-                    
-//                     if(accion === "Add Department") {
-//                         employeeTracker()
-//                         connection.query("INSERT INTO department SET ?", {
-//                             name:answers.department
-                            
-//                         })
-//                     }
-
-//                     // const dept_Id = departmentArray.filter(department => department.name === answers.roleDepartment) [0].department_id.id; PRUEBA AHORITA REGRESO A ELLA
-//                     if(accion === "Add Role") {
-//                         employeeTracker()
-//                         connection.query("INSERT INTO role SET ?", {
-//                             title: answers.roleName,
-//                             salary: answers.salary,
-//                             department_id: dept_Id,
-//                         })
-//                     }
-
-//                     if (accion === "Add Employee") {
-//                         employeeTracker()
-//                         connection.query("INSERT INTO employee SET ?", {
-//                             first_name: answers.firstName,
-//                             last_name: answers.lastName,
-//                             // role_id
-//                         })
-//                     }
-
-                    
-                        
-                    
+            connection.query("INSERT INTO role SET ?", {
+                title: answers.roleName,
+                salary: answers.salary,
+                department_id: departmentId,
+            })
+            console.log("Succsesfully Added Role") 
+            employeeTracker()
+        })
         
-//                 }); 
-//             }      
-//         }            
-//     )  
-// };       
+    })
+}
+
+addEmployee = () => {
+    connection.execute("SELECT role.id AS id, title AS name FROM role", (err, results) => {
+        const roleArray = results.map(r => {
+            return r
+        })
+        console.log(roleArray)
+        
+        return inquirer.prompt ([
+            {
+                type: "input",
+                name: "firstName",
+                message: "What is the first name of the employee?",
+            },
+            {
+                type: "input",
+                name: "lastName",
+                message: "What is the last name of the employee?",
+            },
+            {
+                type: "list", 
+                name: "employeeRole",
+                message: "What is the role for the employee?",
+                choices: roleArray,
+            }
+            // {
+            //     type: "list", 
+            //     name: "employeeManager",
+            //     message: "Who is the employees manager?",
+            //     choices: managerArray,
+            // },
+        ])
+        .then((answers) => {
+            const roleId = roleArray.filter(role => role.name === answers.employeeRole)[0].id;
+            console.log(roleId)
+            employeeTracker()
+            connection.query("INSERT INTO employee SET ?", {
+                first_name: answers.firstName,
+                last_name: answers.lastName,
+                role_id: roleId,
+                manager_id: null
+            })
+            
+        })
+    })
+};
+
 
 
 employeeTracker()
