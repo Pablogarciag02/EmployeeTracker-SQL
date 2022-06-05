@@ -5,44 +5,36 @@ const consoleTable = require("console.table");
 const connection = require("./connection/connection");
 const { query, promise } = require("./connection/connection");
 
-// const queries = require ("./db/queries");
+//Will execute when the conection is established to the server. imported from connection.js
+connectionEstablished = () => {
+   console.log("  /$$$$$$$$                         /$$                                               /$$$$$$$$                           /$$                           ")
+   console.log(" | $$_____/                        | $$                                              |__  $$__/                          | $$                           ")
+   console.log(" | $$       /$$$$$$/$$$$   /$$$$$$ | $$  /$$$$$$  /$$   /$$  /$$$$$$   /$$$$$$          | $$  /$$$$$$  /$$$$$$   /$$$$$$$| $$   /$$  /$$$$$$   /$$$$$$  ")
+   console.log(" | $$$$$   | $$_  $$_  $$ /$$__  $$| $$ /$$__  $$| $$  | $$ /$$__  $$ /$$__  $$         | $$ /$$__  $$|____  $$ /$$_____/| $$  /$$/ /$$__  $$ /$$__  $$ ")
+   console.log(" | $$__/   | $$ \ $$ \ $$| $$  \ $$| $$| $$  \$$ | $$ | $$|       $$$$$$$$| $$$$$$$$        | $$| $$  \__/ /$$$$$$$| $$       | $$$$$$/ | $$$$$$$$| $$  \__/ ")
+   console.log(" | $$      | $$ | $$ | $$| $$  | $$| $$| $$  | $$| $$  | $$| $$_____/| $$_____/         | $$| $$      /$$__  $$| $$      | $$_  $$ | $$_____/| $$       ")
+   console.log(" | $$$$$$$$| $$ | $$ | $$| $$$$$$$/| $$|  $$$$$$/|  $$$$$$$|  $$$$$$$|  $$$$$$$         | $$| $$     |  $$$$$$$|  $$$$$$$| $$ \  $$ |  $$$$$$$| $$       ")
+   console.log(" |________/|__/ |__/ |__/| $$____/ |__/ \______/  \____  $$ \_______/ \_______/             |__/|__/      \_______/ \_______/  |__/  \__/ \_______/  |__/       ")
+   console.log("                         | $$                     /$$| $$                                                                                              ")
+   console.log("                         | $$                    |  $$$$$$/                                                                                             ")
+   console.log("                         |__/                     \______/                                                                                              ")
+   employeeTracker();
+}
 
-
-
-let roleArray = [];
-let employeeArray = [];
-let managerArray = [];
-
-// connectionEstablished = () => {
-//    console.log("  /$$$$$$$$                         /$$                                               /$$$$$$$$                           /$$                           ")
-//    console.log(" | $$_____/                        | $$                                              |__  $$__/                          | $$                           ")
-//    console.log(" | $$       /$$$$$$/$$$$   /$$$$$$ | $$  /$$$$$$  /$$   /$$  /$$$$$$   /$$$$$$          | $$  /$$$$$$  /$$$$$$   /$$$$$$$| $$   /$$  /$$$$$$   /$$$$$$  ")
-//    console.log(" | $$$$$   | $$_  $$_  $$ /$$__  $$| $$ /$$__  $$| $$  | $$ /$$__  $$ /$$__  $$         | $$ /$$__  $$|____  $$ /$$_____/| $$  /$$/ /$$__  $$ /$$__  $$ ")
-//    console.log(" | $$__/   | $$ \ $$ \ $$| $$  \ $$| $$| $$  \ $$| $$  | $$| $$$$$$$$| $$$$$$$$         | $$| $$  \__/ /$$$$$$$| $$      | $$$$$$/ | $$$$$$$$| $$  \__/ ")
-//    console.log(" | $$      | $$ | $$ | $$| $$  | $$| $$| $$  | $$| $$  | $$| $$_____/| $$_____/         | $$| $$      /$$__  $$| $$      | $$_  $$ | $$_____/| $$       ")
-//    console.log(" | $$$$$$$$| $$ | $$ | $$| $$$$$$$/| $$|  $$$$$$/|  $$$$$$$|  $$$$$$$|  $$$$$$$         | $$| $$     |  $$$$$$$|  $$$$$$$| $$ \  $$|  $$$$$$$| $$       ")
-//    console.log(" |________/|__/ |__/ |__/| $$____/ |__/ \______/  \____  $$ \_______/ \_______/         |__/|__/      \_______/ \_______/|__/  \__/ \_______/|__/       ")
-//    console.log("                         | $$                     /$$  | $$                                                                                             ")
-//    console.log("                         | $$                    |  $$$$$$/                                                                                             ")
-//    console.log("                         |__/                     \______/                                                                                              ")
-//    employeeTracker();
-// }
-
-
-
+//Returns a prompt that contains one array with all the answers
 const employeeTracker = () => {
     return inquirer.prompt ([
         {
             type: "list",
             name: "accion",
             message: "Please Select an Option",
-            choices:["All Departments", "All Roles", "All Employees", "Add Department", "Add Role", "Add Employee", "Update An Employee Role"]
+            choices:["All Departments", "All Roles", "All Employees", "Add Department", "Add Role", "Add Employee", "Update An Employee Role", "Delete An Employee", "Delete A Department", "Delete A Role"]
         },
     ])   
     
     .then((answers) => {
         let {accion} = answers;
-//                     
+                    
         if(accion === "All Departments") {
             allDepartments()
             
@@ -70,6 +62,18 @@ const employeeTracker = () => {
 
         if(accion === "Update An Employee Role") {
             updateEmployee()
+        }
+
+        if(accion === "Delete An Employee") {
+           deleteEmployee()
+        }
+
+        if(accion === "Delete A Department") {
+            deleteDepartment()
+        }
+
+         if(accion === "Delete A Role") {
+            deleteRole()
         }
     })
 }
@@ -264,6 +268,164 @@ addEmployee = () => {
 };
 
 
+updateEmployee = ()  => {
+    const employeeTable = `SELECT * FROM employee`;
 
-employeeTracker()
+    connection.query(employeeTable, (err, results) => {
+        if (err) throw err;
+
+        const employees = results.map(({id, first_name, last_name }) => ({id:id, name: first_name + " " + last_name}))
+        // console.log(employees)
+
+        inquirer.prompt([
+            {
+            type: "list",
+            name: "employeeName",
+            message: "Which employee would you like to update?",
+            choices: employees
+            }
+        ])
+        .then(answer => {
+            const employee = answer.employeeName;
+            const employeeId = employees.filter(employee => employee.name === answer.employeeName)[0].id
+            // console.log(employeeId)
+            const array = [];
+            
+            // const departmentId = roleArray.filter(role => role.name === answer.employeeRole)[0].id;
+            
+            
+            array.push(employeeId);
+
+            
+            const roleTable = "SELECT role.id, role.title AS name FROM role";
+
+            connection.query(roleTable, (err, results) => {
+                if (err) throw err;
+
+                const roles = results.map(({id, name}) => ({id: id, name: name}));
+
+                inquirer.prompt([
+                    {
+                        type: "list",
+                        name: "employeeRole",
+                        message: "What new role would you like to add for this employee?",
+                        choices: roles
+                    }
+                ])
+                .then(answer => {
+                    const newRole = answer.employeeRole;
+
+                    const roleId = roles.filter(role => role.name === answer.employeeRole)[0].id;
+                    // console.log(roleId)
+
+                    array.push(roleId);
+                    // console.log(array)
+
+                    connection.query(`UPDATE employee SET role_id = ${roleId} WHERE id = ${employeeId}`) 
+
+                    console.log("Employee Succesfully Updated")
+                    
+                    employeeTracker()
+                    
+                })
+            })
+        })
+    })
+
+};  
+
+deleteEmployee = () => {
+    const employeeTable = `SELECT * FROM employee`;
+
+    connection.query(employeeTable, (err, results) => {
+        if (err) throw err;
+
+        const employees = results.map(({id, first_name, last_name }) => ({id:id, name: first_name + " " + last_name}))
+        // console.log(employees)
+
+        inquirer.prompt([
+            {
+            type: "list",
+            name: "employeeName",
+            message: "Which employee would you like to Delete?",
+            choices: employees
+            }
+        ])
+        .then(answer => {
+            const employeeId = employees.filter(employee => employee.name === answer.employeeName)[0].id
+        
+            connection.query(`DELETE FROM employee WHERE id = ${employeeId}`)
+
+            employeeTracker()
+            
+        })
+
+
+    })    
+}
+
+deleteDepartment = () => {
+    const deparmtentTale = `SELECT * FROM department`;
+
+    connection.query(deparmtentTale, (err, results) => {
+        if (err) throw err;
+
+        const departments = results.map(({id, name }) => ({id: id, name: name}))
+        // console.log(employees)
+
+        inquirer.prompt([
+            {
+            type: "list",
+            name: "departmentChoice",
+            message: "Which department would you like to Delete?",
+            choices: departments
+            }
+        ])
+        .then(answer => {
+            const departmentId = departments.filter(department => department.name === answer.departmentChoice)[0].id
+        
+            connection.query(`DELETE FROM department WHERE id = ${departmentId}`)
+
+            console.log("Succesfully Deleted the Department")
+
+            employeeTracker()
+            
+        })
+
+
+    })    
+}
+
+deleteRole = () => {
+    const roleTable = `SELECT role.id, role.title AS name FROM role`;
+
+    connection.query(roleTable, (err, results) => {
+        if (err) throw err;
+
+        const roles = results.map(({id, name }) => ({id: id, name: name}))
+
+        inquirer.prompt([
+            {
+            type: "list",
+            name: "roleName",
+            message: "Which role would you like to Delete?",
+            choices: roles
+            }
+        ])
+        .then(answer => {
+            const roleId = roles.filter(role => role.name === answer.roleName)[0].id
+        
+            connection.query(`DELETE FROM role WHERE id = ${roleId}`)
+
+            console.log("Succesfully Deleted Role from Database")
+
+            employeeTracker()
+            
+        })
+
+
+    })    
+}
+
+
 
