@@ -31,13 +31,12 @@ const employeeTracker = () => {
             choices:["All Departments", "All Roles", "All Employees", "Add Department", "Add Role", "Add Employee", "Update An Employee Role", "Delete An Employee", "Delete A Department", "Delete A Role"]
         },
     ])   
-    
+    //Each answer return a function 
     .then((answers) => {
         let {accion} = answers;
                     
         if(accion === "All Departments") {
             allDepartments()
-            
         }
 
         if(accion === "All Roles") {
@@ -78,6 +77,7 @@ const employeeTracker = () => {
     })
 }
 
+//Function that shows all departments
 allDepartments = () => {
     connection.query(
         'SELECT id, name AS department FROM `department`', 
@@ -88,6 +88,7 @@ allDepartments = () => {
     )
 };
 
+//Function that shows all Roles
 allRoles = () => {
     connection.query(
         'SELECT role.id, role.title, role.salary, department.name AS department FROM `role` INNER JOIN department ON role.department_id = department.id', 
@@ -98,6 +99,7 @@ allRoles = () => {
     )
 }
 
+//Function that shows all Employees
 allEmployees = () => {
     connection.query(
         `SELECT e.id, e.first_name, e.last_name, title, name AS department, salary, CONCAT(m.first_name, ' ', m.last_name) AS manager
@@ -115,6 +117,7 @@ allEmployees = () => {
     )
 }
 
+//Function that adds departments
 addDepartment = () => {
     return inquirer.prompt ([
         {
@@ -140,13 +143,14 @@ addDepartment = () => {
     })
 }
 
+//Function that adds Role
 addRole = () => {
     connection.execute("SELECT * FROM department",  (err, results) => {
         const departmentArray = results.map(d => {
             return d
             
         })    
-        // console.log(departmentArray)
+
         return inquirer.prompt ([
             {
                 type: "input",
@@ -175,8 +179,10 @@ addRole = () => {
             },
         ])
         .then((answers) => {
+            //Gets the id of the department through the name of the department
             const departmentId = departmentArray.filter(department => department.name === answers.roleDepartment)[0].id;
 
+            //Inserts answers into role table, department id adds the id of the department to the table
             connection.query("INSERT INTO role SET ?", {
                 title: answers.roleName,
                 salary: answers.salary,
@@ -189,8 +195,7 @@ addRole = () => {
     })
 }
 
-
-
+//Function that adds Employee
 addEmployee = () => {
     inquirer.prompt([
         {
@@ -204,13 +209,13 @@ addEmployee = () => {
             message: "What is the last name of the employee?",
         }
     ])
+    //Creates an array called employee info and adds the first and last name provided
     .then(answers => {
         const employeeInfo = [answers.firstName, answers.lastName]
-        // console.log(employeeInfo)
 
         const role = "SELECT role.id, role.title AS name FROM role";
 
-        
+        //Creates an array that will contain the id and the name of the roles
         connection.query(role, (err, results) => {
             if(err) throw err;
             const roleArray = results.map(({id, name}) => ({id: id, name: name}));
@@ -226,16 +231,18 @@ addEmployee = () => {
             ])
             .then(answer => {
                 const role = answer.employeeRole;
+                //Grabs the role selected and gets its id so that it can be added to the table
                 const departmentId = roleArray.filter(role => role.name === answer.employeeRole)[0].id;
-                // console.log(departmentId)
+
+                //Pushes the id from the role selected into the employee info array that contains first and last name
                 employeeInfo.push(departmentId);
-                // console.log(employeeInfo)
 
                 const managerRole = "SELECT * FROM employee"
-    
+                
+                //Gets all employees that are managers and selects their id and their full name and adds it into an array
                 connection.query(managerRole, (err, results) => {
                     const managerArray = results.map(({id, first_name, last_name }) => ({id:id, name: first_name + " " + last_name}))
-                    // console.log(managerArray)
+
                     inquirer.prompt([
                         {
                             type: "list", 
@@ -245,11 +252,12 @@ addEmployee = () => {
                         }
                     ])
                     .then(answer => {
-                        const employeeManager = answer.employeeManager;
+                        //Grabs the manager selected and returns his id
                         const managerId = managerArray.filter(employee => employee.name === answer.employeeManager)[0].id;
-                        // console.log(managerId)
+
+                        //Pushes the managers id into the employee info so that it can be added to the employee table row
                         employeeInfo.push(managerId);
-                        console.log(employeeInfo)
+
                         const rowEmployee = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES(?, ?, ?, ?)"
                         
                         connection.query (rowEmployee, employeeInfo, (err, result) => {
@@ -267,15 +275,15 @@ addEmployee = () => {
     });
 };
 
-
+//Function that Updates Employee
 updateEmployee = ()  => {
+    //Selects all info from employee
     const employeeTable = `SELECT * FROM employee`;
 
     connection.query(employeeTable, (err, results) => {
         if (err) throw err;
-
+        //Gets id, and full name 
         const employees = results.map(({id, first_name, last_name }) => ({id:id, name: first_name + " " + last_name}))
-        // console.log(employees)
 
         inquirer.prompt([
             {
@@ -286,22 +294,16 @@ updateEmployee = ()  => {
             }
         ])
         .then(answer => {
-            const employee = answer.employeeName;
+            //Gets the id of the employee that was selected for update
             const employeeId = employees.filter(employee => employee.name === answer.employeeName)[0].id
-            // console.log(employeeId)
-            const array = [];
-            
-            // const departmentId = roleArray.filter(role => role.name === answer.employeeRole)[0].id;
-            
-            
-            array.push(employeeId);
 
-            
+            //Grabs role id and role title and renames it to name
             const roleTable = "SELECT role.id, role.title AS name FROM role";
 
             connection.query(roleTable, (err, results) => {
                 if (err) throw err;
 
+                //Maps the info that was recieved and makes an array that contains role id and role name
                 const roles = results.map(({id, name}) => ({id: id, name: name}));
 
                 inquirer.prompt([
@@ -313,14 +315,11 @@ updateEmployee = ()  => {
                     }
                 ])
                 .then(answer => {
-                    const newRole = answer.employeeRole;
-
+                    //Gets the role id from the role that was selected by name
                     const roleId = roles.filter(role => role.name === answer.employeeRole)[0].id;
-                    // console.log(roleId)
 
-                    array.push(roleId);
-                    // console.log(array)
 
+                    //Updates the information using string literals.
                     connection.query(`UPDATE employee SET role_id = ${roleId} WHERE id = ${employeeId}`) 
 
                     console.log("Employee Succesfully Updated")
@@ -334,6 +333,7 @@ updateEmployee = ()  => {
 
 };  
 
+//Function that Deletes Employee that is Selected
 deleteEmployee = () => {
     const employeeTable = `SELECT * FROM employee`;
 
@@ -341,7 +341,6 @@ deleteEmployee = () => {
         if (err) throw err;
 
         const employees = results.map(({id, first_name, last_name }) => ({id:id, name: first_name + " " + last_name}))
-        // console.log(employees)
 
         inquirer.prompt([
             {
@@ -364,6 +363,7 @@ deleteEmployee = () => {
     })    
 }
 
+//Function that Deletes the department that is selected
 deleteDepartment = () => {
     const deparmtentTale = `SELECT * FROM department`;
 
@@ -396,6 +396,7 @@ deleteDepartment = () => {
     })    
 }
 
+//Function that Deletes the role that is selected
 deleteRole = () => {
     const roleTable = `SELECT role.id, role.title AS name FROM role`;
 
