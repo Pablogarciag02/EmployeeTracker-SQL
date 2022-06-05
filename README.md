@@ -4,7 +4,7 @@
 https://github.com/Pablogarciag02/EmployeeTracker-SQL
 
 ## Youtube Video Showing Functionality
-[Example-Walkthrough](https://note-taker-pablogarciag02.herokuapp.com/)
+[Example-Walkthrough](https://www.youtube.com/watch?v=IogJrzY-Qm0&ab_channel=PabloGarcia)
 
 ## About this Project
 -Every company must use a database or a table to manage and know information about their employees
